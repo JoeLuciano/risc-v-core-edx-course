@@ -81,7 +81,7 @@
                 $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20   ], $instr[30:25], $instr[24:21], 1'b0} :
                 32'b0; // Default
    
-   $rd_valid     = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
+   $rd_valid     = ($is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr) && $rd != 0;
    $funct3_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
    $rs1_valid    = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
    $rs2_valid    = $is_r_instr || $is_s_instr || $is_b_instr;
@@ -104,11 +104,17 @@
    $is_addi = $decode_bits ==? 11'bx_000_0010011;
    $is_add  = $decode_bits ==? 11'b0_000_0110011;
    
+   // ALU
+   $result[31:0] = 
+       $is_add  ? $src1_value + $src2_value :
+       $is_addi ? $src1_value + $imm        :
+       32'b0; // Default
+   
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
    
-   m4+rf(32, 32, $reset, $rd_valid, $rd, $result[31:0], $rs1_valid, $rs1, $src1_value, $rs2_valid, $rs2, $src2_value)
+   m4+rf(32, 32, $reset, $rd_valid, $rd, $result, $rs1_valid, $rs1, $src1_value, $rs2_valid, $rs2, $src2_value)
    //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
    m4+cpu_viz()
 \SV
