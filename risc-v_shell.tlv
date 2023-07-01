@@ -91,6 +91,19 @@
    // Hide Warnings
    `BOGUS_USE($opcode $rd $rd_valid $funct3 $funct3_valid $rs1 $rs1_valid $rs2 $rs2_valid $funct7 $funct7_valid)
    
+   // Instruction Decode
+   $decode_bits[10:0] = {$funct7[5], $funct3, $opcode};
+   
+   $is_beq  = $decode_bits ==? 11'bx_000_1100011;
+   $is_bne  = $decode_bits ==? 11'bx_001_1100011;
+   $is_blt  = $decode_bits ==? 11'bx_100_1100011;
+   $is_bge  = $decode_bits ==? 11'bx_101_1100011;
+   $is_bltu = $decode_bits ==? 11'bx_110_1100011;
+   $is_bgeu = $decode_bits ==? 11'bx_111_1100011;
+   
+   $is_addi = $decode_bits ==? 11'bx_000_0010011;
+   $is_add  = $decode_bits ==? 11'b0_000_0110011;
+   
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
