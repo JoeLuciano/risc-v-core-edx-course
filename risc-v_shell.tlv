@@ -44,7 +44,9 @@
    $reset = *reset;
    
    // Program Counter
-   $next_pc[31:0] = $reset ? 0 : $pc + 4;
+   $next_pc[31:0] = $reset    ? 0 :
+                    $taken_br ? $br_tgt_pc :
+                    $pc + 4;
    $pc[31:0] = >>1$next_pc;
    
    // Instruction Memory
@@ -109,11 +111,26 @@
        $is_add  ? $src1_value + $src2_value :
        $is_addi ? $src1_value + $imm        :
        32'b0; // Default
-   
+
+   // Branch Taken Logic
+   $taken_br = $is_beq  ? $src1_value ==  $src2_value :
+               $is_bne  ? $src1_value !=  $src2_value :
+               $is_blt  ? $src1_value  <  $src2_value :
+               $is_bge  ? $src1_value >=  $src2_value :
+               $is_bltu ? (($src1_value[31] == 1'b1 && $src2_value[31] == 1'b0) ? 1'b1 :
+                           ($src1_value[31] == 1'b0 && $src2_value[31] == 1'b1) ? 1'b0 :
+                           $src1_value <  $src2_value) :
+               $is_bgeu ? (($src1_value[31] == 1'b1 && $src2_value[31] == 1'b0) ? 1'b0 :
+                           ($src1_value[31] == 1'b0 && $src2_value[31] == 1'b1) ? 1'b1 :
+                           $src1_value >= $src2_value) :
+               1'b0;
+
+   $br_tgt_pc[31:0] = $pc + $imm;
+
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
-   
+
    m4+rf(32, 32, $reset, $rd_valid, $rd, $result, $rs1_valid, $rs1, $src1_value, $rs2_valid, $rs2, $src2_value)
    //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
    m4+cpu_viz()
