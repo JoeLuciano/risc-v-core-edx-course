@@ -44,8 +44,10 @@
    $reset = *reset;
    
    // Program Counter
-   $next_pc[31:0] = $reset    ? 0 :
-                    $taken_br ? $br_tgt_pc :
+   $next_pc[31:0] = $reset    ? 0            :
+                    $taken_br ? $br_tgt_pc   :
+                    $is_jal   ? $br_tgt_pc   :
+                    $is_jalr  ? $jalr_tgt_pc :
                     $pc + 4;
    $pc[31:0] = >>1$next_pc;
    
@@ -149,6 +151,9 @@
       //   64-bit sign-extended results, to be truncated
    $sra_rslt[63:0]  = $sext_src1 >> $src2_value[4:0];
    $srai_rslt[63:0] = $sext_src1 >> $imm[4:0];
+   
+      // Jump and Link Logic
+   $jalr_tgt_pc[31:0] = $src1_value + $imm;
    
    $result[31:0] =
        $is_lui   ? { $imm[31:12], 12'b0 }           :
