@@ -156,10 +156,10 @@
    $jalr_tgt_pc[31:0] = $src1_value + $imm;
    
    $result[31:0] =
-       $is_lui   ? { $imm[31:12], 12'b0 }           :
-       $is_auipc ? $pc + $imm                       :
-       $is_jal   ? $pc + 32'd4                      :
-       $is_jalr  ? $pc + 32'd4                      :
+       $is_lui    ? { $imm[31:12], 12'b0 }           :
+       $is_auipc  ? $pc + $imm                       :
+       $is_jal    ? $pc + 32'd4                      :
+       $is_jalr   ? $pc + 32'd4                      :
        // $is_beq   ? $src1_value ==  $src2_value      :
        // $is_bne   ? $src1_value !=  $src2_value      :
        // $is_blt   ? $src1_value  <  $src2_value      :
@@ -171,29 +171,30 @@
        // $is_lw
        // $is_lbu
        // $is_lhu
-       $is_load   ? $src1_value                     :
+       $is_load    ? $src1_value + $imm              :
        // $is_sb
        // $is_sh
        // $is_sw
-       $is_addi   ? $src1_value + $imm              :
-       $is_slti   ? $slti_rslt                      :
-       $is_sltiu  ? $sltiu_rslt                     :
-       $is_xori   ? $src1_value ^ $imm              :
-       $is_ori    ? $src1_value | $imm              :
-       $is_andi   ? $src1_value & $imm              :
-       $is_slli   ? $src1_value << $imm[5:0]        :
-       $is_srli   ? $src1_value >> $imm[5:0]        :
-       $is_srai   ? $srai_rslt[31:0]                :
-       $is_add    ? $src1_value + $src2_value       :
-       $is_sub    ? $src1_value - $src2_value       :
-       $is_sll    ? $src1_value << $src2_value[4:0] :
-       $is_slt    ? $slt_rslt                       :
-       $is_sltu   ? $sltu_rslt                      :
-       $is_xor    ? $src1_value ^ $src2_value       :
-       $is_srl    ? $src1_value >> $src2_value[4:0] :
-       $is_sra    ? $sra_rslt[31:0]                 :
-       $is_or     ? $src1_value | $src2_value       :
-       $is_and    ? $src1_value & $src2_value       :
+       $is_s_instr ? $src1_value + $imm              :
+       $is_addi    ? $src1_value + $imm              :
+       $is_slti    ? $slti_rslt                      :
+       $is_sltiu   ? $sltiu_rslt                     :
+       $is_xori    ? $src1_value ^ $imm              :
+       $is_ori     ? $src1_value | $imm              :
+       $is_andi    ? $src1_value & $imm              :
+       $is_slli    ? $src1_value << $imm[5:0]        :
+       $is_srli    ? $src1_value >> $imm[5:0]        :
+       $is_srai    ? $srai_rslt[31:0]                :
+       $is_add     ? $src1_value + $src2_value       :
+       $is_sub     ? $src1_value - $src2_value       :
+       $is_sll     ? $src1_value << $src2_value[4:0] :
+       $is_slt     ? $slt_rslt                       :
+       $is_sltu    ? $sltu_rslt                      :
+       $is_xor     ? $src1_value ^ $src2_value       :
+       $is_srl     ? $src1_value >> $src2_value[4:0] :
+       $is_sra     ? $sra_rslt[31:0]                 :
+       $is_or      ? $src1_value | $src2_value       :
+       $is_and     ? $src1_value & $src2_value       :
        32'b0; // Default
 
    
@@ -212,12 +213,15 @@
    
    $br_tgt_pc[31:0] = $pc + $imm;
    
+   // Load/Store Logic
+   $regfile_data[31:0] = $is_load ? $ld_data : $result;
+   
    // Assert these to end simulation (before Makerchip cycle limit).
    *passed = 1'b0;
    *failed = *cyc_cnt > M4_MAX_CYC;
    
-   m4+rf(32, 32, $reset, $rd_valid, $rd, $result, $rs1_valid, $rs1, $src1_value, $rs2_valid, $rs2, $src2_value)
-   //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
+   m4+rf(32, 32, $reset, $rd_valid, $rd, $regfile_data, $rs1_valid, $rs1, $src1_value, $rs2_valid, $rs2, $src2_value)
+   m4+dmem(32, 32, $reset, $result[4:0], $is_s_instr, $src2_value, $is_load, $ld_data[31:0])
    m4+cpu_viz()
 \SV
    endmodule
